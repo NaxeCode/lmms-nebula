@@ -32,6 +32,7 @@
 #include "AutomationEditor.h"
 #include "ConfigManager.h"
 #include "ControllerRackView.h"
+#include "ControlServer.h"
 #include "MixerView.h"
 #include "MainWindow.h"
 #include "MicrotunerConfig.h"
@@ -194,6 +195,9 @@ GuiApplication::GuiApplication()
 
 	splashScreen.finish(m_mainWindow);
 	m_mainWindow->finalize();
+
+	// Off unless LMMS_CONTROL_SOCKET names a socket; owned by this application
+	ControlServer::createFromEnvironment(this);
 
 	m_loadingProgressLabel = nullptr;
 }
