@@ -1,4 +1,70 @@
 <div align="center">
+	<h1>LMMS-Nebula</h1>
+	<p>LMMS with a control socket, so another program can drive it while it plays</p>
+	<p>An unofficial fork of <a href="https://github.com/LMMS/lmms">LMMS</a> 1.3.0-alpha.2, made for
+	the music of the game Nebula Homestead</p>
+</div>
+
+What is LMMS-Nebula?
+--------------------
+
+It is LMMS, unchanged except for one small addition: a local control socket
+(`src/gui/ControlServer.cpp`). A script, or an assistant through an MCP server, can list the
+tracks, move faders, play and seek, read and rewrite a clip's notes, reload a sample track's audio
+after re-rendering it, and open or save the project, while you listen and edit in LMMS as usual.
+The change is kept small and in LMMS's own style so it can be offered upstream.
+
+The socket is off unless the environment variable `LMMS_CONTROL_SOCKET` names a path:
+
+```sh
+LMMS_CONTROL_SOCKET=/tmp/lmms.sock lmms song.mmp
+```
+
+Each request is one line of JSON, an object with a `cmd` and its arguments; each answer is one
+line, `{"ok": true, "result": ...}` or `{"ok": false, "error": "..."}`, carrying the request's
+`id` if it had one. Positions are ticks (48 to a beat) or `bar`, counted from 1; track volume is
+LMMS's percent (100 = unity), pan -100 to 100, note volume 0 to 200.
+
+| `cmd` | Arguments | Does |
+|---|---|---|
+| `status` | | the project, modified, loading, playing, paused, tick, bar, bpm, length |
+| `tracks` | | every track: name, type, volume, pan, muted, solo, and its clips |
+| `set_track` | `track`, and any of `volume`, `pan`, `muted`, `solo` | sets them on the track named |
+| `play` | optional `tick` or `bar` | plays the song, from there if given |
+| `pause`, `stop` | | as the transport buttons |
+| `seek` | `tick` or `bar` | moves the playhead, playing or not |
+| `get_notes` | `track`, and `clip` (name) or `tick`/`bar` | a MIDI clip's notes: pos, len, key, vol, pan |
+| `set_notes` | as `get_notes`, and `notes` | replaces the clip's notes (all checked first) |
+| `reload_samples` | `track`, optional `file`, `clip`, `tick`/`bar` | re-reads the sample clips' audio from disk |
+| `open` | `path`, optional `discard_changes` | opens a project; refuses over unsaved changes |
+| `save` | optional `path` | saves the project |
+
+```sh
+printf '{"cmd":"set_track","track":"Bass","volume":80}\n' | nc -U /tmp/lmms.sock
+```
+
+Requests run on the GUI thread, exactly like the user's own actions, and sample buffers are
+swapped under the audio engine's lock. Only the user who started LMMS can connect.
+
+`nebula/` has the rest:
+
+- `control.py`, a client for the socket, from Python or the shell (`python3 nebula/control.py tracks`);
+- `lmms_mcp.py`, an MCP server exposing the commands as tools, so an assistant such as Claude
+  can drive LMMS while you listen (`claude mcp add lmms -- uv run /path/to/nebula/lmms_mcp.py`);
+- `build-macos-app.sh`, which builds `~/Applications/LMMS-Nebula.app` beside a stock LMMS
+  1.3.0-alpha.2, compiling only the `lmms` binary and reusing the stock bundle's plugins. Its
+  launcher turns the socket on and gives the app settings of its own.
+
+Elsewhere the branch builds as LMMS does (`.github/workflows/build.yml`); start LMMS with
+`LMMS_CONTROL_SOCKET` set. LMMS-Nebula is free
+software under the GPL, version 2 or later, like LMMS (see `LICENSE.txt`); the work in it is
+LMMS's, by its many contributors.
+
+The rest of this file is LMMS's own README.
+
+---
+
+<div align="center">
 	<h1>
 	<img src="https://raw.githubusercontent.com/LMMS/artwork/master/Icon%20%26%20Mimetypes/lmms-64x64.svg" alt="LMMS Logo"><br>LMMS
 	</h1>
