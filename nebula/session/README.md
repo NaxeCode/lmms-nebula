@@ -2,7 +2,7 @@
 
 Play a four-bar D Dorian game cue with a bell lead, bass, sustained chords and mallet ticks. The browser editor and the two score exports share one 48-tick-per-beat note representation. The default cue has 74 notes at 96 BPM.
 
-Open the [interactive review build](https://naxe-portfolio-review.vercel.app/labs/lmms-session/), or open [web/index.html](web/index.html) directly from a local checkout. The page uses local JavaScript and CSS files. In the arrangement, choose a track or bar and press **Play**. Select a note to change its pitch, step, length or velocity. Click an empty step or use **Add note**. **Undo** restores the previous edit.
+Open the [interactive studio](https://naxe.dev/labs/lmms-session/), or open [web/index.html](web/index.html) directly from a local checkout. The page uses local JavaScript and CSS files. In the arrangement, choose a track or bar and press **Play**. Select a note to change its pitch, step, length or velocity. Click an empty step or use **Add note**. **Undo** restores the previous edit.
 
 | Export | What it carries |
 | --- | --- |
