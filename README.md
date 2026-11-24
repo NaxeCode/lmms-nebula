@@ -5,6 +5,14 @@
 	the music of the game Nebula Homestead</p>
 </div>
 
+## Play and edit a four-track session
+
+[![The four-track arrangement and piano roll for Low Tide Relay](nebula/session/studio.png)](nebula/session/README.md)
+
+**Try the studio.** Open `nebula/session/web/index.html` in a browser from a checkout. Play *Low Tide Relay*, mute the bass, or change a note in the piano roll. Export the edited session as a native LMMS song, four `set_notes` commands or a stereo WAV. The included LMMS recording lets you hear the same starter score through the desktop instruments.
+
+[Open the session guide](nebula/session/README.md) · [Starter LMMS project](nebula/session/web/low-tide-relay.mmp) · [Native LMMS recording](nebula/session/web/low-tide-relay.ogg)
+
 What is LMMS-Nebula?
 --------------------
 
