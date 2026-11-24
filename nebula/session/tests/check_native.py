@@ -25,20 +25,22 @@ def verify(binary):
         score = root / "fixture.mmp"
         shutil.copyfile(template, score)
         socket = str(root / "control.sock")
-        config = ET.Element("lmms", version="1.3.0-alpha.2")
+        config = ET.Element("lmms", version="1.3.0-alpha.2", configversion="3")
+        ET.SubElement(config, "app", configured="1")
         ET.SubElement(config, "paths", workingdir=str(root / "workspace") + "/")
-        ET.SubElement(config, "mixer", audiodev="Dummy (no sound output)", mididev="Dummy (no MIDI support)")
+        ET.SubElement(config, "audioengine", audiodev="SDL (Simple DirectMedia Layer)", mididev="Dummy (no MIDI support)")
         config_path = root / "settings.xml"
         ET.ElementTree(config).write(config_path)
         (root / "workspace").mkdir()
         env = dict(os.environ, LMMS_CONTROL_SOCKET=socket, QT_QPA_PLATFORM="offscreen",
-                   HOME=directory, XDG_CONFIG_HOME=directory, XDG_RUNTIME_DIR=directory)
+                   HOME=directory, XDG_CONFIG_HOME=directory, XDG_RUNTIME_DIR=directory, SDL_AUDIODRIVER="dummy")
         control.SOCKET = socket
         with (root / "startup.log").open("w+") as log:
             process = subprocess.Popen([str(binary), "--config", str(config_path), str(score)],
                                        cwd=root, env=env, stdout=log, stderr=log)
             try:
-                for _ in range(100):
+                # Cold FFTW planning on ARM can take over a minute before the GUI creates its socket.
+                for _ in range(1800):
                     if process.poll() is not None:
                         break
                     try:
@@ -61,8 +63,11 @@ def verify(binary):
                 changed = deepcopy(requests[0]["notes"])
                 changed[0]["vol"] -= 1
                 control.call("set_notes", notes=changed, **target)
+                # The valid prefix differs from the saved clip. A partial application
+                # before encountering the invalid tail must be observable.
+                invalid_batch = [{**changed[0], "key": changed[0]["key"] + 1}, {**changed[0], "key": 128}]
                 try:
-                    control.call("set_notes", notes=changed + [{**changed[0], "key": 128}], **target)
+                    control.call("set_notes", notes=invalid_batch, **target)
                 except control.LmmsError:
                     pass
                 else:
@@ -71,7 +76,9 @@ def verify(binary):
                 saved = root / "saved.mmp"
                 control.call("save", path=str(saved))
                 control.call("open", path=str(saved))
-                assert sort_notes(control.call("get_notes", **target)["notes"]) == sort_notes(changed)
+                for index, request in enumerate(requests):
+                    restored = control.call("get_notes", track=request["track"], clip=request["clip"])
+                    assert sort_notes(restored["notes"]) == sort_notes(changed if index == 0 else request["notes"])
                 print(f'Native socket verified {len(requests)} tracks and {sum(len(r["notes"]) for r in requests)} notes. '
                       "One velocity edit survived save/reopen. An invalid batch preserved the clip.")
             except Exception:
